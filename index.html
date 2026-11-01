@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5F3EE">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317140F'/%3E%3Ccircle cx='16' cy='13.5' r='5.5' fill='none' stroke='%23F5F3EE' stroke-width='2'/%3E%3Cpath d='M7 25c2.2-4.2 5.3-6.3 9-6.3s6.8 2.1 9 6.3' fill='none' stroke='%23B4472C' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>PORTRAIT — 头像评分报告</title>
+<style>
+  /* ---------- tokens ---------- */
+  :root{
+    --paper:#F5F3EE;
+    --surface:#FFFDFA;
+    --surface-2:#FAF8F3;
+    --ink:#17140F;
+    --ink-2:#3B362E;
+    --muted:#7C7568;
+    --faint:#A49C8D;
+    --line:#E4DED2;
+    --line-2:#EDE8DE;
+    --accent:#B4472C;
+    --accent-2:#D06A4A;
+    --accent-soft:#F2E2DA;
+    --good:#3D6B4F;
+    --radius:18px;
+    --radius-sm:12px;
+    --shadow:0 1px 2px rgba(23,20,15,.045), 0 14px 34px -16px rgba(23,20,15,.18);
+    --shadow-lift:0 2px 4px rgba(23,20,15,.05), 0 26px 50px -22px rgba(23,20,15,.24);
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans SC", sans-serif;
+    --serif:Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  body::after{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:9999;
+    opacity:.22;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+  }
+  img{max-width:100%}
+  button{font:inherit;color:inherit}
+  a{color:inherit}
+
+  .wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:60;
+    backdrop-filter:saturate(1.4) blur(14px);
+    background:rgba(245,243,238,.82);
+    border-bottom:1px solid var(--line-2);
+  }
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+  .brand{display:flex;align-items:baseline;gap:10px;font-weight:700;letter-spacing:.16em;font-size:12.5px}
+  .brand b{font-weight:800}
+  .brand span{color:var(--faint);letter-spacing:.12em;font-weight:500}
+  .topmeta{display:flex;align-items:center;gap:14px;font-size:11.5px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px rgba(61,107,79,.14)}
+  @media(max-width:640px){ .topmeta .hide-s{display:none} }
+
+  /* ---------- layout ---------- */
+  main{padding:clamp(28px,6vw,64px) 0 80px}
+  .view[hidden]{display:none !important}
+
+  /* ---------- hero / upload ---------- */
+  .hero{max-width:780px}
+  .eyebrow{
+    display:flex;align-items:center;gap:12px;
+    font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:22px;
+  }
+  .eyebrow::before{content:"";width:34px;height:1px;background:var(--ink);opacity:.35}
+  h1{
+    font-size:clamp(38px,6.6vw,66px);
+    line-height:1.02;
+    letter-spacing:-.035em;
+    font-weight:800;
+    margin:0 0 20px;
+  }
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:clamp(15px,1.6vw,17.5px);color:var(--ink-2);max-width:52ch;margin:0 0 34px}
+  .lede strong{font-weight:600;border-bottom:1.5px solid var(--accent-soft);padding-bottom:1px}
+
+  .drop{
+    position:relative;
+    display:block;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:calc(var(--radius) + 6px);
+    padding:clamp(26px,4.4vw,44px);
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    transition:box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.3,1), border-color .3s ease;
+    overflow:hidden;
+  }
+  .drop:hover{box-shadow:var(--shadow-lift);transform:translateY(-2px);border-color:#D8D0C0}
+  .drop:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .drop.dragging{border-color:var(--accent);background:var(--accent-soft)}
+  .drop-inner{display:flex;align-items:center;gap:clamp(18px,3vw,32px)}
+  .drop-art{
+    flex:0 0 auto;width:clamp(76px,11vw,104px);height:clamp(76px,11vw,104px);
+    border-radius:16px;background:var(--surface-2);border:1px solid var(--line-2);
+    display:grid;place-items:center;color:var(--accent);
+  }
+  .drop-art svg{width:56%;height:56%}
+  .drop-text h2{margin:0 0 6px;font-size:clamp(17px,2.2vw,21px);letter-spacing:-.01em;font-weight:700}
+  .drop-text p{margin:0;color:var(--muted);font-size:13.5px}
+  .drop-cta{
+    margin-left:auto;flex:0 0 auto;
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--ink);color:#FFFDFA;
+    padding:12px 20px;border-radius:999px;
+    font-size:13.5px;font-weight:600;letter-spacing:.02em;
+    transition:background .25s ease, transform .25s ease;
+  }
+  .drop:hover .drop-cta{background:var(--accent)}
+  @media(max-width:720px){
+    .drop-inner{flex-wrap:wrap}
+    .drop-cta{margin-left:0;width:100%;justify-content:center;order:3}
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 0;padding:0;list-style:none}
+  .chips li{
+    font-size:12px;letter-spacing:.06em;color:var(--ink-2);
+    border:1px solid var(--line);border-radius:999px;padding:6px 13px;background:var(--surface);
+  }
+  .chips li b{color:var(--accent);font-weight:700;margin-right:5px;font-family:var(--serif)}
+
+  .fineprint{
+    margin:24px 0 0;font-size:12px;color:var(--faint);line-height:1.7;
+    display:flex;gap:8px;align-items:flex-start;max-width:62ch;
+  }
+  .fineprint svg{flex:0 0 auto;margin-top:2px;color:var(--good)}
+
+  /* ---------- loading ---------- */
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52vh;text-align:center}
+  .spinner{width:58px;height:58px;position:relative;margin-bottom:30px}
+  .spinner svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .spinner circle{fill:none;stroke-width:2.2}
+  .spinner .bg{stroke:var(--line)}
+  .spinner .fg{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:154;stroke-dashoffset:154;transition:stroke-dashoffset .5s ease}
+  .stage-text{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+  .stage-name{font-size:19px;font-weight:600;margin:0;letter-spacing:-.01em}
+
+  /* ---------- report ---------- */
+  .rep-head{
+    display:grid;grid-template-columns:1fr auto;gap:clamp(20px,4vw,48px);
+    align-items:end;padding-bottom:26px;border-bottom:1px solid var(--line);
+    margin-bottom:clamp(22px,3.4vw,36px);
+  }
+  .rep-no{font-size:11px;letter-spacing:.22em;color:var(--faint);text-transform:uppercase;margin:0 0 14px}
+  .verdict{font-size:clamp(26px,4.4vw,42px);line-height:1.12;letter-spacing:-.03em;font-weight:800;margin:0 0 12px}
+  .verdict-sum{margin:0;color:var(--ink-2);font-size:14.5px;max-width:56ch}
+  .total-box{display:flex;align-items:center;gap:16px}
+  .ring-wrap{position:relative;width:104px;height:104px;flex:0 0 auto}
+  .ring-wrap svg{transform:rotate(-90deg);width:100%;height:100%}
+  .ring-bg{fill:none;stroke:var(--line);stroke-width:7}
+  .ring-fg{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)}
+  .ring-num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .total-lab{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:0 0 2px}
+  .total-sub{font-size:12.5px;color:var(--faint);margin:0}
+  @media(max-width:720px){
+    .rep-head{grid-template-columns:1fr;gap:22px;align-items:start}
+    .total-box{justify-content:flex-start}
+  }
+
+  .rep-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:clamp(20px,3vw,32px);align-items:start}
+  @media(max-width:920px){ .rep-grid{grid-template-columns:1fr} }
+
+  .photo-col{position:sticky;top:82px;display:flex;flex-direction:column;gap:14px}
+  @media(max-width:920px){ .photo-col{position:static} }
+  .photo-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px;box-shadow:var(--shadow);position:relative;
+  }
+  .photo-card::before,.photo-card::after{
+    content:"";position:absolute;width:14px;height:14px;border:1px solid var(--faint);opacity:.55;
+  }
+  .photo-card::before{top:6px;left:6px;border-right:0;border-bottom:0}
+  .photo-card::after{bottom:6px;right:6px;border-left:0;border-top:0}
+  .photo-card img{display:block;width:100%;border-radius:8px;background:var(--surface-2);max-height:440px;object-fit:contain}
+  .photo-meta{
+    display:flex;justify-content:space-between;gap:10px;
+    padding:10px 4px 2px;font-size:11px;letter-spacing:.08em;color:var(--faint);text-transform:uppercase;
+  }
+  .photo-note{font-size:11.5px;color:var(--muted);margin:0;padding:0 4px;line-height:1.6}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:clamp(18px,2.6vw,26px);box-shadow:var(--shadow);
+  }
+  .panel + .panel{margin-top:clamp(16px,2.4vw,22px)}
+  .panel-h{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    margin:0 0 6px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
+  }
+  #radar{display:block;width:100%;max-width:400px;margin:0 auto}
+  #radar text{font-family:var(--sans)}
+
+  /* dimension cards */
+  .dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .dim{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:18px 18px 16px;transition:border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+  }
+  .dim:hover{border-color:#D9D1C1;box-shadow:var(--shadow);transform:translateY(-2px)}
+  .dim-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .dim-name{display:flex;align-items:baseline;gap:9px}
+  .dim-idx{font-family:var(--serif);font-size:11px;color:var(--faint);letter-spacing:.06em}
+  .dim-name h3{margin:0;font-size:15.5px;font-weight:700;letter-spacing:.01em}
+  .dim-score{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+  .dim-score span{font-size:11px;font-weight:400;color:var(--faint);letter-spacing:0;margin-left:2px}
+  .bar{height:4px;border-radius:99px;background:var(--line-2);overflow:hidden;margin-bottom:14px}
+  .bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--ink);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+  .bar i.hi{background:var(--accent)}
+  .dim-note{margin:0 0 12px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+  .dim-list{list-style:none;margin:0;padding:12px 0 0;border-top:1px dashed var(--line);display:grid;gap:7px}
+  .dim-list li{font-size:12.5px;line-height:1.55;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
+  .dim-list li em{flex:1 1 auto;min-width:0}
+  .dim-list li span{flex:0 0 auto;font-size:9.5px;letter-spacing:.1em;padding:2px 6px;border-radius:4px;height:18px;line-height:14px;margin-top:2px}
+  .dim-list .plus span{background:#E7EFE8;color:var(--good)}
+  .dim-list .minus span{background:var(--accent-soft);color:var(--accent)}
+
+  /* advice */
+  .advice{list-style:none;margin:0;padding:0;counter-reset:a;display:grid;gap:0}
+  .advice li{
+    display:grid;grid-template-columns:auto 1fr;gap:16px;
+    padding:16px 0;border-bottom:1px solid var(--line-2);counter-increment:a;
+  }
+  .advice li:last-child{border-bottom:0;padding-bottom:0}
+  .advice li::before{
+    content:counter(a,decimal-leading-zero);
+    font-family:var(--serif);font-size:13px;color:var(--faint);padding-top:2px;letter-spacing:.04em;
+  }
+  .advice p{margin:0;font-size:14px;line-height:1.68;color:var(--ink-2)}
+  .advice b{display:block;font-size:14.5px;color:var(--ink);font-weight:700;margin-bottom:3px;letter-spacing:-.01em}
+  .tag{
+    display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--accent);color:#FFF;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:2px;font-weight:600;
+  }
+  .tag.soft{background:var(--line);color:var(--ink-2)}
+
+  /* actions + footer */
+  .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(24px,3.4vw,34px)}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:13px 24px;border-radius:999px;border:1px solid var(--ink);
+    background:var(--ink);color:#FFFDFA;font-size:14px;font-weight:600;
+    cursor:pointer;transition:all .25s ease;
+  }
+  .btn:hover{background:var(--accent);border-color:var(--accent);transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.ghost:hover{background:var(--surface);border-color:var(--ink);color:var(--ink)}
+  .btn svg{width:15px;height:15px}
+
+  .disclaimer{
+    margin-top:34px;padding-top:20px;border-top:1px solid var(--line-2);
+    font-size:11.5px;line-height:1.8;color:var(--faint);max-width:78ch;
+  }
+
+  .foot{padding:26px 0 44px;font-size:11.5px;color:var(--faint);letter-spacing:.04em}
+  .foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line-2);padding-top:20px}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);
+    background:var(--ink);color:#FFFDFA;padding:11px 20px;border-radius:999px;
+    font-size:13px;opacity:0;pointer-events:none;transition:all .3s ease;z-index:9998;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media print{
+    body::after,.topbar,.actions,.foot,.loading{display:none !important}
+    body{background:#fff}
+    .photo-col{position:static}
+    .panel,.dim,.photo-card{box-shadow:none;break-inside:avoid}
+    a[href]::after{content:""}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><b>PORTRAIT</b><span>/ 头像评分</span></div>
+    <div class="topmeta">
+      <span class="hide-s">全部本地计算 · 照片不上传</span>
+      <span class="dot"></span>
+      <span>READY</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- ========== VIEW: UPLOAD ========== -->
+    <section class="view" id="view-upload">
+      <div class="hero">
+        <p class="eyebrow">Portrait Assessment · v1.0</p>
+        <h1>头像这东西,<br>一秒钟<em>定生死</em>。</h1>
+        <p class="lede">上传一张正脸照,算法拆解<strong>五官、气质、穿搭、发型、整体印象</strong>五个维度,给出不留情面的评分和改法。不夸你,但也不白骂你。</p>
+
+        <label class="drop" id="drop" for="file" tabindex="0" role="button" aria-label="上传头像照片">
+          <div class="drop-inner">
+            <div class="drop-art" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                <rect x="6" y="9" width="36" height="30" rx="3"/>
+                <circle cx="24" cy="21" r="6"/>
+                <path d="M13 33c2.4-4.4 6.3-6.6 11-6.6S32.6 28.6 35 33"/>
+                <path d="M18 9V6h12v3" stroke-dasharray="2 2.6"/>
+              </svg>
+            </div>
+            <div class="drop-text">
+              <h2>把照片拖进来,或者点击选择</h2>
+              <p>JPG / PNG / WebP · 建议正脸、光线均匀、无遮挡 · 支持直接粘贴</p>
+            </div>
+            <div class="drop-cta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              上传照片
+            </div>
+          </div>
+          <input type="file" id="file" accept="image/*" hidden>
+        </label>
+
+        <ul class="chips">
+          <li><b>01</b>五官</li>
+          <li><b>02</b>气质</li>
+          <li><b>03</b>穿搭</li>
+          <li><b>04</b>发型</li>
+          <li><b>05</b>整体印象</li>
+        </ul>
+
+        <p class="fineprint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span>照片在你的浏览器里完成全部计算,不会上传到任何服务器。评分由清晰度、曝光、对称性、色彩分布、结构比例等可测量指标换算而来,是客观测量,不是审美裁判。</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== VIEW: LOADING ========== -->
+    <section class="view loading" id="view-loading" hidden>
+      <div class="spinner" aria-hidden="true">
+        <svg viewBox="0 0 58 58"><circle class="bg" cx="29" cy="29" r="24.5"/><circle class="fg" id="spinFg" cx="29" cy="29" r="24.5"/></svg>
+      </div>
+      <p class="stage-text" id="stageIdx">STEP 01 / 05</p>
+      <p class="stage-name" id="stageName">读取图像数据</p>
+    </section>
+
+    <!-- ========== VIEW: REPORT ========== -->
+    <section class="view" id="view-report" hidden>
+
+      <div class="rep-head">
+        <div>
+          <p class="rep-no" id="repNo">REPORT NO. —</p>
+          <h2 class="verdict" id="verdictTitle">—</h2>
+          <p class="verdict-sum" id="verdictSum">—</p>
+        </div>
+        <div class="total-box">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" pathLength="100"/>
+            </svg>
+            <div class="ring-num" id="totalNum">0.0</div>
+          </div>
+          <div>
+            <p class="total-lab">Total</p>
+            <p class="total-sub">综合评分 / 10</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rep-grid">
+        <aside class="photo-col">
+          <div class="photo-card">
+            <img id="repImg" alt="被分析的原始照片">
+            <div class="photo-meta"><span id="metaSize">—</span><span id="metaFace">—</span></div>
+          </div>
+          <p class="photo-note" id="photoNote">—</p>
+        </aside>
+
+        <div class="right-col">
+          <div class="panel">
+            <p class="panel-h"><span>Dimensions / 五维分布</span><span id="radarHint">↑ 越靠外越强</span></p>
+            <div id="radar"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-h"><span>Breakdown / 逐项拆解</span></p>
+            <div class="dims" id="dims"></div>
+          </div>
+
+          <div class="panel">
+            <p class="panel-h"><span>Fix it / 改进建议</span></p>
+            <ol class="advice" id="advice"></ol>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="againBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.6h4.6"/></svg>
+              再测一张
+            </button>
+            <button class="btn ghost" id="printBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
+              打印 / 存为 PDF
+            </button>
+          </div>
+
+          <p class="disclaimer">
+            评分说明:本报告由浏览器本地图像算法生成,依据人脸区域占比、左右镜像对称度、拉普拉斯清晰度方差、曝光均值与对比度、肤色均匀度、背景噪点密度、主色相离散度、构图三分位偏移等指标加权换算,并非人工审美判断,也不代表他人对你的真实观感。同一张照片的分数固定可复现;换一张照片,结论可能完全不同。它适合用来诊断"这张照片拍得好不好",而不是"你长得好不好"。
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>PORTRAIT — 本地图像评分引擎</span>
+    <span>Canvas 2D · 零依赖 · 不上传</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     0. utils
+     ========================================================= */
+  const $ = (s, r = document) => r.querySelector(s);
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const clamp01 = v => clamp(v, 0, 1);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const gauss = (x, mu, sig) => Math.exp(-((x - mu) * (x - mu)) / (2 * sig * sig));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const round1 = v => Math.round(v * 10) / 10;
+
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  const view = name => {
+    ["upload","loading","report"].forEach(k => {
+      $("#view-" + k).hidden = (k !== name);
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  let toastTimer;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg;
+    el.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("on"), 2600);
+  }
+
+  /* =========================================================
+     1. upload wiring
+     ========================================================= */
+  const drop = $("#drop"), fileInput = $("#file");
+  let busy = false;
+
+  drop.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) handleFile(f);
+  });
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); drop.classList.add("dragging");
+  }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); drop.classList.remove("dragging");
+  }));
+  drop.addEventListener("drop", e => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  document.addEventListener("paste", e => {
+    if (busy) return;
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const it of items) {
+      if (it.type.indexOf("image") === 0) {
+        const f = it.getAsFile();
+        if (f) { handleFile(f); break; }
+      }
+    }
+  });
+
+  async function handleFile(file){
+    if (busy) return;
+    if (!/^image\//.test(file.type)) { toast("这不是图片,换一个吧"); return; }
+    if (file.size > 14 * 1024 * 1024) { toast("图片超过 14MB,先压缩一下"); return; }
+    busy = true;
+
+    const url = URL.createObjectURL(file);
+    const img = await loadImage(url).catch(() => null);
+    if (!img) { toast("图片读取失败,试试换一张"); busy = false; URL.revokeObjectURL(url); return; }
+
+    view("loading");
+    try {
+      const cv = toCanvas(img, 640);
+
+      setStage(0); await sleep(320);
+
+      setStage(1); await sleep(140);
+      const face = await detectFace(cv);
+      await sleep(200);
+
+      setStage(2); await sleep(300);
+      const m = analyze(cv, face);
+
+      setStage(3); await sleep(280);
+      const report = buildReport(m);
+
+      setStage(4); await sleep(240);
+      render(report, url, file, m);
+    } catch (err) {
+      console.error(err);
+      toast("分析过程出错了,换张图试试");
+      view("upload");
+      URL.revokeObjectURL(url);
+    } finally {
+      busy = false;
+      fileInput.value = "";
+    }
+  }
+
+  $("#againBtn").addEventListener("click", () => {
+    const img = $("#repImg");
+    if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+    img.removeAttribute("src");
+    view("upload");
+  });
+  $("#printBtn").addEventListener("click", () => window.print());
+
+  function loadImage(src){
+    return new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = src;
+    });
+  }
+
+  function toCanvas(img, maxSide){
+    const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+    const k = Math.min(1, maxSide / Math.max(w0, h0));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(w0 * k));
+    c.height = Math.max(1, Math.round(h0 * k));
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  /* ---------- loading stages ---------- */
+  const STAGES = ["读取图像数据", "定位人脸区域", "提取结构与色彩特征", "换算五维评分", "生成报告"];
+  function setStage(i){
+    $("#stageIdx").textContent = "STEP 0" + (i + 1) + " / 05";
+    $("#stageName").textContent = STAGES[i];
+    $("#spinFg").style.strokeDashoffset = String(154 - 154 * (i + 1) / STAGES.length);
+  }
+
+  /* =========================================================
+     2. face detection  (native API when available)
+     ========================================================= */
+  async function detectFace(canvas){
+    if (!("FaceDetector" in window)) return null;
+    try {
+      const fd = new window.FaceDetector({ maxDetectedFaces: 1, fastMode: false });
+      const faces = await fd.detect(canvas);
+      if (!faces || !faces.length) return null;
+      const b = faces[0].boundingBox;
+      if (!b || b.width < 8 || b.height < 8) return null;
+      return { x: b.x, y: b.y, w: b.width, h: b.height, exact: true };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /* =========================================================
+     3. pixel analysis
+     ========================================================= */
+  function analyze(cv, faceBox){
+    const w = cv.width, h = cv.height, N = w * h;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    const d = ctx.getImageData(0, 0, w, h).data;
+
+    const gray = new Float32Array(N);
+    const sat  = new Float32Array(N);
+    const skin = new Uint8Array(N);
+
+    let sumL = 0, sumL2 = 0, sumS = 0, skinCount = 0;
+    const sx = [], sy = [];
+    let hash = 2166136261;
+
+    for (let i = 0, p = 0; i < N; i++, p += 4){
+      const r = d[p], g = d[p+1], b = d[p+2];
+      const l = 0.299 * r + 0.587 * g + 0.114 * b;
+      gray[i] = l; sumL += l; sumL2 += l * l;
+
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const s = mx === 0 ? 0 : (mx - mn) / mx;
+      sat[i] = s; sumS += s;
+
+      // YCbCr skin test
+      const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+      const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+      if (cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173 && r > 60 && g > 30 && r >= g && r >= b){
+        skin[i] = 1; skinCount++;
+        if ((i & 7) === 0){ sx.push(i % w); sy.push((i / w) | 0); }
+      }
+      if ((i & 1023) === 0) hash = (hash ^ ((r + g * 3 + b * 7) & 255)) * 16777619;
+    }
+
+    const meanL = sumL / N;
+    const stdL = Math.sqrt(Math.max(0, sumL2 / N - meanL * meanL));
+    const meanS = sumS / N;
+
+    /* ---- sharpness: laplacian variance ---- */
+    let lapS = 0, lapS2 = 0, lapN = 0;
+    for (let y = 1; y < h - 1; y++){
+      const row = y * w;
+      for (let x = 1; x < w - 1; x++){
+        const i = row + x;
+        const lap = 4 * gray[i] - gray[i-1] - gray[i+1] - gray[i-w] - gray[i+w];
+        lapS += lap; lapS2 += lap * lap; lapN++;
+      }
+    }
+    const lapVar = lapN ? Math.max(0, lapS2 / lapN - (lapS / lapN) * (lapS / lapN)) : 0;
+    const sharpness = clamp01((Math.log10(lapVar + 1) - 1.30) / 1.75);
+
+    /* ---- exposure / contrast / saturation ---- */
+    const exposure   = gauss(meanL / 255, 0.56, 0.20);
+    const contrast   = gauss(stdL / 255, 0.195, 0.115);
+    const saturation = gauss(meanS, 0.34, 0.19);
+
+    /* ---- face box ---- */
+    let fb = null, faceFound = false;
+    if (faceBox){
+      fb = { x: faceBox.x, y: faceBox.y, w: faceBox.w, h: faceBox.h };
+      faceFound = true;
+    } else if (sx.length > 120){
+      const xs = sx.slice().sort((a, b) => a - b);
+      const ys = sy.slice().sort((a, b) => a - b);
+      const lo = Math.floor(xs.length * 0.05), hi = Math.floor(xs.length * 0.95);
+      const x0 = xs[lo], x1 = xs[hi], y0 = ys[lo], y1 = ys[hi];
+      if (x1 - x0 > w * 0.12 && y1 - y0 > h * 0.12){
+        fb = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+        faceFound = true;
+      }
+    }
+    if (!fb){
+      fb = { x: w * 0.22, y: h * 0.14, w: w * 0.56, h: h * 0.56 };
+      faceFound = false;
+    }
+
+    /* ---- symmetry inside face box ---- */
+    const bx0 = Math.round(clamp(fb.x, 0, w - 2));
+    const bx1 = Math.round(clamp(fb.x + fb.w, 1, w));
+    const by0 = Math.round(clamp(fb.y, 0, h - 2));
+    const by1 = Math.round(clamp(fb.y + fb.h, 1, h));
+    let symDiff = 0, symN = 0;
+    const stepY = Math.max(1, Math.floor((by1 - by0) / 90));
+    const stepX = Math.max(1, Math.floor((bx1 - bx0) / 90));
+    for (let y = by0; y < by1; y += stepY){
+      const row = y * w;
+      for (let x = bx0; x < bx0 + Math.floor((bx1 - bx0) / 2); x += stepX){
+        const mx = bx1 - 1 - (x - bx0);
+        if (mx < 0 || mx >= w) continue;
+        symDiff += Math.abs(gray[row + x] - gray[row + mx]);
+        symN++;
+      }
+    }
+    const symRaw = symN ? symDiff / symN : 40;
+    const symmetry = clamp01(1 - symRaw / 26) * 0.85 + 0.10;
+
+    /* ---- skin evenness inside face box ---- */
+    let skSum = 0, skSum2 = 0, skN = 0;
+    for (let y = by0; y < by1; y += 2){
+      const row = y * w;
+      for (let x = bx0; x < bx1; x += 2){
+        const i = row + x;
+        if (!skin[i]) continue;
+        skSum += gray[i]; skSum2 += gray[i] * gray[i]; skN++;
+      }
+    }
+    const skMean = skN ? skSum / skN : 0;
+    const skStd = skN ? Math.sqrt(Math.max(0, skSum2 / skN - skMean * skMean)) : 30;
+    const skinEven = clamp01(1 - (skStd - 10) / 46);
+
+    /* ---- edge density helper ---- */
+    function edgeDensity(x0, y0, x1, y1, step){
+      let sum = 0, n = 0;
+      for (let y = Math.max(1, y0 | 0); y < Math.min(h - 1, y1 | 0); y += step){
+        const row = y * w;
+        for (let x = Math.max(1, x0 | 0); x < Math.min(w - 1, x1 | 0); x += step){
+          const i = row + x;
+          const gx = Math.abs(gray[i+1] - gray[i-1]);
+          const gy = Math.abs(gray[i+w] - gray[i-w]);
+          sum += (gx + gy); n++;
+        }
+      }
+      return n ? (sum / n) / 255 : 0;
+    }
+
+    /* ---- background ring ---- */
+    const band = Math.max(4, Math.round(Math.min(w, h) * 0.08));
+    let bgSum = 0, bgSum2 = 0, bgR = 0, bgG = 0, bgB = 0, bgN = 0;
+    for (let y = 0; y < h; y += 2){
+      for (let x = 0; x < w; x += 2){
+        if (x > band && x < w - band && y > band && y < h - band) continue;
+        const i = (y * w + x);
+        const p = i * 4;
+        bgSum += gray[i]; bgSum2 += gray[i] * gray[i];
+        bgR += d[p]; bgG += d[p+1]; bgB += d[p+2]; bgN++;
+      }
+    }
+    const bgMean = bgN ? bgSum / bgN : 0;
+    const bgStd = bgN ? Math.sqrt(Math.max(0, bgSum2 / bgN - bgMean * bgMean)) : 0;
+    const bgRGB = [bgR / Math.max(1, bgN), bgG / Math.max(1, bgN), bgB / Math.max(1, bgN)];
+    const bgEdges = edgeDensity(0, 0, w, band, 2) * 0.5 +
+                    edgeDensity(0, h - band, w, h, 2) * 0.5;
+    const bgUniform = clamp01(1 - bgStd / 62);
+    const bgQuiet   = clamp01(1 - (bgEdges - 0.055) / 0.16);
+    const bgCalm    = 0.52 * bgUniform + 0.48 * bgQuiet;
+
+    /* ---- outfit region (below face) ---- */
+    const oy0 = Math.round(clamp(fb.y + fb.h * 0.96, 0, h - 2));
+    const oy1 = h;
+    let oR = 0, oG = 0, oB = 0, oN = 0, oSat = 0;
+    const hueBins = new Float64Array(12);
+    let hueTotal = 0;
+    let hueRe = 0, hueIm = 0;
+    for (let y = oy0; y < oy1; y += 2){
+      const row = y * w;
+      for (let x = 0; x < w; x += 2){
+        const i = row + x;
+        if (skin[i]) continue;
+        const p = i * 4;
+        const r = d[p], g = d[p+1], b = d[p+2];
+        oR += r; oG += g; oB += b; oN++;
+        const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+        const s = mx === 0 ? 0 : (mx - mn) / mx;
+        oSat += s;
+        const weight = Math.pow(s, 1.4) * (0.25 + gray[i] / 255);
+        if (s < 0.09 || weight <= 0.001) continue;
+        let hue = 0;
+        const dd = mx - mn || 1;
+        if (mx === r) hue = ((g - b) / dd) % 6;
+        else if (mx === g) hue = (b - r) / dd + 2;
+        else hue = (r - g) / dd + 4;
+        hue *= 60; if (hue < 0) hue += 360;
+        const bin = Math.min(11, Math.floor(hue / 30));
+        hueBins[bin] += weight; hueTotal += weight;
+        const rad = hue * Math.PI / 180;
+        hueRe += Math.cos(rad) * weight;
+        hueIm += Math.sin(rad) * weight;
+      }
+    }
+    const outfitN = Math.max(1, oN);
+    const outfitRGB = [oR / outfitN, oG / outfitN, oB / outfitN];
+    const outfitSat = oSat / outfitN;
+
+    // hue concentration: 1 = single hue family, 0 = rainbow chaos
+    const hueR = hueTotal > 0 ? Math.sqrt(hueRe * hueRe + hueIm * hueIm) / hueTotal : 0.2;
+    let bigBins = 0;
+    if (hueTotal > 0){
+      for (let i = 0; i < 12; i++) if (hueBins[i] / hueTotal > 0.16) bigBins++;
+    }
+    const harmony  = clamp01(hueR * 1.05) * 0.6 + clamp01(1 - Math.max(0, bigBins - 1) / 3.2) * 0.4;
+    const restraint = gauss(outfitSat, 0.30, 0.20) * 0.7 + clamp01(1 - Math.max(0, bigBins - 2) / 4) * 0.3;
+
+    // separation between outfit and background
+    const sep = Math.sqrt(
+      Math.pow(outfitRGB[0] - bgRGB[0], 2) +
+      Math.pow(outfitRGB[1] - bgRGB[1], 2) +
+      Math.pow(outfitRGB[2] - bgRGB[2], 2)
+    );
+    const separation = clamp01(sep / 78);
+
+    const outfitClean = clamp01(1 - (edgeDensity(0, oy0, w, oy1, 3) - 0.05) / 0.16);
+
+    /* ---- hair region ---- */
+    const hx0 = fb.x - fb.w * 0.20, hx1 = fb.x + fb.w * 1.20;
+    const hy0 = fb.y - fb.h * 0.45, hy1 = fb.y + fb.h * 0.12;
+    let darkN = 0, hairN = 0;
+    for (let y = Math.max(0, hy0 | 0); y < Math.min(h, hy1 | 0); y += 2){
+      const row = y * w;
+      for (let x = Math.max(0, hx0 | 0); x < Math.min(w, hx1 | 0); x += 2){
+        const i = row + x;
+        hairN++;
+        if (gray[i] < 88 && !skin[i]) darkN++;
+      }
+    }
+    const hairMass = hairN ? darkN / hairN : 0;
+
+    // hair at the sides of the face -> framing
+    let sideDark = 0, sideN = 0;
+    for (let y = by0; y < by0 + (by1 - by0) * 0.7; y += 2){
+      const row = y * w;
+      for (let x = Math.max(0, (fb.x - fb.w * 0.14) | 0); x < fb.x; x += 2){
+        sideN++; if (gray[row + x] < 95 && !skin[row + x]) sideDark++;
+      }
+      for (let x = Math.min(w - 1, (fb.x + fb.w) | 0); x < Math.min(w, (fb.x + fb.w * 1.14) | 0); x += 2){
+        sideN++; if (gray[row + x] < 95 && !skin[row + x]) sideDark++;
+      }
+    }
+    const sideHair = sideN ? sideDark / sideN : 0;
+
+    const hairEdges = edgeDensity(Math.max(0, hx0), Math.max(0, hy0), Math.min(w, hx1), Math.min(h, hy1), 2);
+    const hairEdgeClean = clamp01(1 - (hairEdges - 0.06) / 0.16);
+
+    const volumeScore = gauss(hairMass, 0.40, 0.26);
+    const framing     = gauss(sideHair, 0.44, 0.30);
+
+    /* ---- composition ---- */
+    const fcx = (fb.x + fb.w / 2) / w;
+    const fcy = (fb.y + fb.h / 2) / h;
+    const fratio = fb.h / h;
+    const compX = 1 - clamp01(Math.abs(fcx - 0.5) / 0.24);
+    const compY = gauss(fcy, 0.44, 0.14);
+    const compSize = gauss(fratio, 0.40, 0.17);
+    const composition = 0.40 * compX + 0.30 * compY + 0.30 * compSize;
+
+    return {
+      w, h,
+      exposure, contrast, saturation, sharpness,
+      symmetry, skinEven,
+      bgCalm, bgUniform, bgQuiet,
+      harmony, separation, restraint, outfitClean, outfitSat, bigBins,
+      hairMass, volumeScore, hairEdgeClean, framing,
+      composition, faceFound, fratio, fcx, fcy, skinRatio: skinCount / N,
+      lapVar, meanL, stdL, hash: Math.abs(hash),
+      bgMean
+    };
+  }
+
+  /* =========================================================
+     4. scoring + copywriting
+     ========================================================= */
+  const DIM_DEFS = [
+    {
+      key: "features", name: "五官", en: "FEATURES",
+      subs: ["symmetry", "sharpness", "skinEven", "exposure"],
+      weight: { symmetry: 0.34, sharpness: 0.30, skinEven: 0.24, exposure: 0.12 },
+      good: {
+        symmetry: "左右对称度在线,正脸经得起直视",
+        sharpness: "对焦扎实,轮廓边缘干净利落",
+        skinEven: "肤色过渡干净,底子是能打的",
+        exposure: "曝光没吃掉面部细节"
+      },
+      bad: {
+        symmetry: "左右脸偏差肉眼可见,正脸略吃亏",
+        sharpness: "画质发软,五官边界糊成一片",
+        skinEven: "肤色明暗不匀,光影把瑕疵放大了",
+        exposure: "曝光没吃准,细节被压掉"
+      },
+      notes: [
+        "骨相和皮相都在线,镜头没亏待你。",
+        "底子不差,问题出在呈现——这张照片没把你拍明白。",
+        "不是长得不行,是这张照片根本没打算让你好看。"
+      ]
+    },
+    {
+      key: "aura", name: "气质", en: "AURA",
+      subs: ["exposure", "contrast", "bgCalm", "saturation"],
+      weight: { exposure: 0.28, contrast: 0.24, bgCalm: 0.28, saturation: 0.20 },
+      good: {
+        exposure: "光线给面子,整体通透",
+        contrast: "明暗关系清楚,脸有体积感",
+        bgCalm: "背景干净,视线稳稳落在你脸上",
+        saturation: "色彩克制,看着不燥"
+      },
+      bad: {
+        exposure: "曝光失衡,脸要么发灰要么过曝",
+        contrast: "光太平,脸像贴纸,没有立体感",
+        bgCalm: "背景太吵,第一眼先看到杂物",
+        saturation: "颜色太艳,画面噪音盖过人"
+      },
+      notes: [
+        "画面有静气,眼神没散,属于越看越耐看的类型。",
+        "干净是干净,但记忆点太少,像高清版的路人甲。",
+        "整个人被环境吞掉了,几乎没有存在感。"
+      ]
+    },
+    {
+      key: "outfit", name: "穿搭", en: "STYLE",
+      subs: ["harmony", "separation", "restraint", "outfitClean"],
+      weight: { harmony: 0.34, separation: 0.30, restraint: 0.20, outfitClean: 0.16 },
+      good: {
+        harmony: "配色成体系,看得出是动过脑子的",
+        separation: "衣服和背景分得开,人立住了",
+        restraint: "用色克制,高级感来自做减法",
+        outfitClean: "面料干净挺括,没有多余的褶皱"
+      },
+      bad: {
+        harmony: "颜色各说各话,互相打架",
+        separation: "衣服和背景同色系糊成一片,人没跳出来",
+        restraint: "饱和度拉太满,视觉噪音太大",
+        outfitClean: "褶皱和纹理太乱,显得随意"
+      },
+      notes: [
+        "配色有逻辑,衣服在帮你,而不是抢你。",
+        "不出错,也不出彩,衣柜里最安全的那一套。",
+        "颜色和人没商量过,像出门前随手抓的。"
+      ]
+    },
+    {
+      key: "hair", name: "发型", en: "HAIR",
+      subs: ["volumeScore", "hairEdgeClean", "framing"],
+      weight: { volumeScore: 0.42, hairEdgeClean: 0.26, framing: 0.32 },
+      good: {
+        volumeScore: "发量给足,头包脸的比例成立",
+        hairEdgeClean: "发丝边缘干净,没有毛躁乱飞",
+        framing: "发型框住了脸型,比例被拉正"
+      },
+      bad: {
+        volumeScore: "头顶塌,颅顶低,直接把脸放大了一圈",
+        hairEdgeClean: "碎发乱飞,精致度瞬间掉档",
+        framing: "发型跟脸型不搭,没起到修饰作用"
+      },
+      notes: [
+        "头包脸做对了,这一步加分很实在。",
+        "发型不添乱,但也没帮忙,属于放任自流。",
+        "头顶塌、边缘乱,把整体精致度打回原形。"
+      ]
+    },
+    {
+      key: "overall", name: "整体印象", en: "IMPRESSION",
+      subs: ["composition", "sharpness", "bgCalm"],
+      weight: { composition: 0.46, sharpness: 0.28, bgCalm: 0.26 },
+      good: {
+        composition: "构图稳,脸的位置和留白都合理",
+        sharpness: "整张图清晰度够,信息量足",
+        bgCalm: "画面不抢戏,主角只有你"
+      },
+      bad: {
+        composition: "构图偏了,脸要么顶天立地要么飘在正中",
+        sharpness: "整张图偏糊,像隔着毛玻璃拍的",
+        bgCalm: "画面太杂,注意力被稀释"
+      },
+      notes: [
+        "第一眼能记住,第二眼不失望——这就不容易了。",
+        "顺眼,但换掉它也不会有人发现你换了头像。",
+        "问题不在某一处,在于整张图没有统一的主张。"
+      ]
+    }
+  ];
+
+  function toScore(v){
+    return clamp(3.9 + clamp01(v) * 5.3, 3.4, 9.4);
+  }
+
+  function pickNote(notes, s){
+    if (s >= 7.6) return notes[0];
+    if (s >= 6.3) return notes[1];
+    return notes[2];
+  }
+
+  function buildReport(m){
+    const rnd = mulberry32(m.hash || 12345);
+    const dims = [];
+
+    DIM_DEFS.forEach((def, idx) => {
+      let v = 0;
+      def.subs.forEach(k => { v += (def.weight[k] || 0) * clamp01(m[k]); });
+      let s = toScore(v);
+      s = clamp(s + (rnd() - 0.5) * 0.42, 3.2, 9.5);
+      s = round1(s);
+
+      const ranked = def.subs.slice().sort((a, b) => clamp01(m[a]) - clamp01(m[b]));
+      const worst = ranked[0], best = ranked[ranked.length - 1];
+
+      dims.push({
+        idx: idx + 1, key: def.key, name: def.name, score: s,
+        note: pickNote(def.notes, s),
+        plus: def.good[best] || "",
+        minus: def.bad[worst] || ""
+      });
+    });
+
+    const byKey = k => dims.find(d => d.key === k).score;
+    const total = round1(
+      0.24 * byKey("features") + 0.20 * byKey("aura") +
+      0.18 * byKey("outfit") + 0.14 * byKey("hair") + 0.24 * byKey("overall")
+    );
+
+    const sorted = dims.slice().sort((a, b) => b.score - a.score);
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+
+    let title;
+    if (total >= 8.2)      title = "底子很能打,别浪费";
+    else if (total >= 7.4) title = "有优势,也有明显短板";
+    else if (total >= 6.5) title = "及格线以上,差在细节";
+    else if (total >= 5.6) title = "普通,问题还挺集中";
+    else                   title = "细节欠账太多,得系统性收拾";
+
+    const summary = `综合 ${total} 分。最强项是${best.name}(${best.score}),最拖后腿的是${worst.name}(${worst.score})——先把后者修掉,收益最大。`;
+
+    /* ---- advice ---- */
+    const pool = [];
+    const add = (k, t) => { if (!pool.some(p => p.k === k)) pool.push({ k, t }); };
+
+    if (m.sharpness < 0.50) add("sharp", "先把照片拍清楚。分辨率不低于 1000px,对焦打在眼睛上,别用前置镜头的数码变焦。糊掉的照片,后期救不回来。");
+    if (m.exposure < 0.48) add("light", "换光。面向窗户、站在侧前方 45° 的自然光里,让脸有明暗过渡;正午顶光和头顶灯管是毁脸双煞。");
+    if (m.bgQuiet < 0.52 || m.bgUniform < 0.45) add("bg", "背景只做一件事:退后。找一面纯色墙,或开大光圈虚化。画面里除你之外的东西越少越好。");
+    if (m.harmony < 0.55) add("color", "配色砍到三种以内,让衣服和背景差一个明度档——人自然就从画面里跳出来了。");
+    if (m.volumeScore < 0.55) add("hair", "头顶吹出 1–2cm 蓬松度,两侧收干净,碎发定型。成本最低、见效最快,整体分能直接抬 0.5。");
+    if (m.composition < 0.62) add("comp", "把脸放在画面上三分之一线附近,头顶留一点空间。现在这张要么顶天立地,要么僵在正中。");
+
+    const adviceByDim = {
+      features: "把照片拍明白比修图重要:正面光、镜头与眼睛齐平、别用广角怼脸——那会把鼻子放大一圈。",
+      aura: "先解决环境:纯色背景 + 侧前方柔光 + 深色外搭压住画面,气质分是最容易靠打光补的一档。",
+      outfit: "衣服只负责一件事:把你从背景里分离出来。比背景深一档或浅一档,领口留出脖子,别让高领吃掉下颌线。",
+      hair: "去剪一个能立住的发型:头顶蓬松、两侧收紧、露出额头三分之一。发型是改造成本最低、回报最高的一项。",
+      overall: "统一风格。背景、光线、衣服、发型讲同一个故事,比任何单项做到 9 分都值钱。"
+    };
+
+    add("dim-" + worst.key, adviceByDim[worst.key]);
+    const second = sorted[sorted.length - 2];
+    add("dim-" + second.key, adviceByDim[second.key]);
+    add("overall", adviceByDim.overall);
+
+    const advice = pool.slice(0, 4).map((p, i) => ({
+      title: ["先修这个", "顺手改掉", "锦上添花", "最后再说"][i] || "补充",
+      text: p.t,
+      strong: i < 2
+    }));
+
+    return {
+      total, title, summary, dims, advice,
+      faceFound: m.faceFound, metrics: m,
+      reportNo: makeReportNo(m.hash)
+    };
+  }
+
+  function makeReportNo(hash){
+    const d = new Date();
+    const p = n => String(n).padStart(2, "0");
+    const code = (hash % 100000).toString().padStart(5, "0");
+    return `REPORT NO. ${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}–${code}`;
+  }
+
+  /* =========================================================
+     5. render
+     ========================================================= */
+  function render(r, url, file, m){
+    $("#repNo").textContent = r.reportNo;
+    $("#verdictTitle").textContent = r.title;
+    $("#verdictSum").textContent = r.summary;
+
+    const img = $("#repImg");
+    img.src = url;
+    $("#metaSize").textContent = `${m.w}×${m.h} · ${(file.size/1024).toFixed(0)}KB`;
+    $("#metaFace").textContent = m.faceFound ? "人脸区域已定位" : "未识别到人脸";
+
+    const notes = [];
+    if (!m.faceFound) notes.push("没有定位到清晰的人脸,以下评分主要基于整张画面的结构、光线与色彩特征,参考价值会打折——建议换一张正脸照重测。");
+    notes.push(`画面平均亮度 ${(m.meanL / 255 * 100).toFixed(0)}%,肤色像素占 ${(m.skinRatio * 100).toFixed(1)}%。`);
+    $("#photoNote").textContent = notes.join(" ");
+
+    // total ring
+    const ring = $("#ringFg");
+    ring.style.strokeDashoffset = "100";
+    const target = r.total;
+    const t0 = performance.now();
+    (function count(now){
+      const t = Math.min(1, (now - t0) / 1100);
+      const e = 1 - Math.pow(1 - t, 3);
+      $("#totalNum").textContent = (target * e).toFixed(1);
+      if (t < 1) requestAnimationFrame(count);
+      else $("#totalNum").textContent = target.toFixed(1);
+    })(t0);
+    requestAnimationFrame(() => { ring.style.strokeDashoffset = String(100 - target * 10); });
+
+    // dims
+    $("#dims").innerHTML = r.dims.map(d => `
+      <article class="dim">
+        <div class="dim-top">
+          <div class="dim-name"><span class="dim-idx">0${d.idx}</span><h3>${d.name}</h3></div>
+          <div class="dim-score">${d.score.toFixed(1)}<span>/10</span></div>
+        </div>
+        <div class="bar"><i data-w="${(d.score * 10).toFixed(0)}" class="${d.score >= 8 ? "hi" : ""}"></i></div>
+        <p class="dim-note">${d.note}</p>
+        <ul class="dim-list">
+          <li class="plus"><span>亮点</span><em style="font-style:normal">${d.plus}</em></li>
+          <li class="minus"><span>短板</span><em style="font-style:normal">${d.minus}</em></li>
+        </ul>
+      </article>
+    `).join("");
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.querySelectorAll(".bar i").forEach(el => { el.style.width = el.dataset.w + "%"; });
+      }, 60);
+    });
+
+    // advice
+    $("#advice").innerHTML = r.advice.map(a => `
+      <li>
+        <p><b>${a.title}${a.strong ? '<span class="tag">优先</span>' : ""}</b>${a.text}</p>
+      </li>
+    `).join("");
+
+    // radar
+    $("#radar").innerHTML = radarSVG(r.dims);
+
+    view("report");
+    requestAnimationFrame(() => animateRadar(r.dims));
+  }
+
+  /* ---------- radar chart ---------- */
+  const RADAR = { size: 380, cx: 190, cy: 194, R: 112 };
+
+  function radarSVG(dims){
+    const { cx, cy, R } = RADAR;
+    const n = dims.length;
+    const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+    const pt = (i, r) => [cx + Math.cos(ang(i)) * r, cy + Math.sin(ang(i)) * r];
+
+    let grid = "";
+    [2, 4, 6, 8, 10].forEach(v => {
+      const pts = dims.map((_, i) => pt(i, R * v / 10).map(x => x.toFixed(1)).join(",")).join(" ");
+      grid += `<polygon points="${pts}" fill="none" stroke="#E4DED2" stroke-width="1"/>`;
+    });
+    dims.forEach((_, i) => {
+      const [x, y] = pt(i, R);
+      grid += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4DED2" stroke-width="1"/>`;
+    });
+
+    let labels = "";
+    dims.forEach((d, i) => {
+      const a = ang(i);
+      const lx = cx + Math.cos(a) * (R + 30);
+      const ly = cy + Math.sin(a) * (R + 30);
+      const anchor = Math.abs(Math.cos(a)) < 0.2 ? "middle" : (Math.cos(a) > 0 ? "start" : "end");
+      const dy = Math.sin(a) < -0.6 ? -2 : (Math.sin(a) > 0.6 ? 12 : 4);
+      labels += `<text x="${lx.toFixed(1)}" y="${(ly + dy).toFixed(1)}" text-anchor="${anchor}" font-size="12.5" font-weight="600" fill="#3B362E">${d.name}</text>`;
+      labels += `<text x="${lx.toFixed(1)}" y="${(ly + dy + 15).toFixed(1)}" text-anchor="${anchor}" font-size="11" fill="#B4472C" font-family="Georgia, 'Times New Roman', serif" font-weight="700">${d.score.toFixed(1)}</text>`;
+    });
+
+    return `
+      <svg viewBox="0 0 ${RADAR.size} ${RADAR.size}" width="100%" role="img" aria-label="五维雷达图">
+        <defs>
+          <radialGradient id="rg" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="#B4472C" stop-opacity="0.30"/>
+            <stop offset="100%" stop-color="#B4472C" stop-opacity="0.10"/>
+          </radialGradient>
+        </defs>
+        ${grid}
+        <polygon id="radarShape" points="${dims.map((_, i) => pt(i, 0).map(x => x.toFixed(1)).join(",")).join(" ")}"
+                 fill="url(#rg)" stroke="#B4472C" stroke-width="1.8" stroke-linejoin="round"/>
+        <g id="radarDots"></g>
+        ${labels}
+      </svg>`;
+  }
+
+  function animateRadar(dims){
+    const shape = document.getElementById("radarShape");
+    const dots = document.getElementById("radarDots");
+    if (!shape) return;
+    const { cx, cy, R } = RADAR;
+    const n = dims.length;
+    const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+    const t0 = performance.now();
+    const dur = 900;
+
+    function frame(now){
+      const t = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - t, 3);
+      const pts = dims.map((d, i) => {
+        const r = R * (d.score / 10) * e;
+        return [cx + Math.cos(ang(i)) * r, cy + Math.sin(ang(i)) * r];
+      });
+      shape.setAttribute("points", pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" "));
+      dots.innerHTML = pts.map(p =>
+        `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.6" fill="#FFFDFA" stroke="#B4472C" stroke-width="2"/>`
+      ).join("");
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+})();
+</script>
+</body>
+</html>
